@@ -2,8 +2,6 @@ package com.hamzabadina.fastbridge;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
 
 public class FastBridgeController {
     public static boolean active = false;
@@ -17,95 +15,34 @@ public class FastBridgeController {
 
         int speed = FastBridgeConfig.speedTicks;
 
-        // Auto refill hotbar slot with blocks from inventory
-        autoRefillBlocks(mc);
-
-        // Reset keys every tick
+        // Always reset every tick
         setKey(mc.options.sneakKey, false);
         setKey(mc.options.rightKey, false);
         setKey(mc.options.backKey, false);
         mc.options.useKey.setPressed(false);
 
-        // Cycle:
-        // Phase 1 (speed*8 ticks) : S+D, NO shift at all — walking freely toward edge
-        // Phase 2 (speed*3 ticks) : S+D+Shift — only sneak when close to edge
-        // Phase 3 (2 ticks)       : NO shift — dip over edge
-        // Phase 4 (3 ticks)       : Shift back ON immediately — catch yourself
-        // Right click is ALWAYS on regardless of phase
+        // Real fast bridge mechanic:
+        // - S + D always held (moving diagonally)
+        // - Right click ALWAYS held (placing constantly)
+        // - Sneak tapped for only 2 ticks per cycle (just enough to not fall)
+        // - Sneak releases for the rest — looks and feels like a real player
 
-        int totalCycle = (speed * 8) + (speed * 3) + 2 + 3;
-        int cycle = tick % totalCycle;
+        int cycle = tick % (speed * 6);
 
-        if (cycle < speed * 8) {
-            // Phase 1: Walk freely, no sneak — player moves naturally
-            setKey(mc.options.backKey, true);
-            setKey(mc.options.rightKey, true);
-            setKey(mc.options.sneakKey, false); // no shift
-
-        } else if (cycle < speed * 8 + speed * 3) {
-            // Phase 2: Getting close to edge — start sneaking
-            setKey(mc.options.backKey, true);
-            setKey(mc.options.rightKey, true);
-            setKey(mc.options.sneakKey, true); // sneak on
-
-        } else if (cycle < speed * 8 + speed * 3 + 2) {
-            // Phase 3: Release shift — dip over edge for 2 ticks
-            setKey(mc.options.backKey, true);
-            setKey(mc.options.rightKey, true);
-            setKey(mc.options.sneakKey, false); // shift OFF
-
-        } else {
-            // Phase 4: Catch yourself — sneak back on fast
-            setKey(mc.options.backKey, true);
-            setKey(mc.options.rightKey, true);
-            setKey(mc.options.sneakKey, true); // shift back ON
-        }
-
-        // Always right click — constant block placement
+        // Always moving + always placing
+        setKey(mc.options.backKey, true);
+        setKey(mc.options.rightKey, true);
         mc.options.useKey.setPressed(true);
 
-        tick++;
-    }
-
-    private static void autoRefillBlocks(MinecraftClient mc) {
-        if (mc.player == null) return;
-
-        int hotbarSlot = mc.player.getInventory().selectedSlot;
-        ItemStack held = mc.player.getInventory().getStack(hotbarSlot);
-
-        // Check if current hotbar slot is empty or not a block
-        if (held.isEmpty() || !(held.getItem() instanceof BlockItem)) {
-            // Search hotbar first for another block slot
-            for (int i = 0; i < 9; i++) {
-                ItemStack stack = mc.player.getInventory().getStack(i);
-                if (!stack.isEmpty() && stack.getItem() instanceof BlockItem) {
-                    mc.player.getInventory().selectedSlot = i;
-                    return;
-                }
-            }
-
-            // Nothing in hotbar — search main inventory (slots 9-35)
-            for (int i = 9; i < 36; i++) {
-                ItemStack stack = mc.player.getInventory().getStack(i);
-                if (!stack.isEmpty() && stack.getItem() instanceof BlockItem) {
-                    // Find empty hotbar slot to move it to
-                    for (int h = 0; h < 9; h++) {
-                        if (mc.player.getInventory().getStack(h).isEmpty()) {
-                            // Swap inventory slot to hotbar
-                            mc.player.getInventory().setStack(h, stack.copy());
-                            mc.player.getInventory().setStack(i, ItemStack.EMPTY);
-                            mc.player.getInventory().selectedSlot = h;
-                            return;
-                        }
-                    }
-                    // No empty hotbar slot — just overwrite slot 0
-                    mc.player.getInventory().setStack(0, stack.copy());
-                    mc.player.getInventory().setStack(i, ItemStack.EMPTY);
-                    mc.player.getInventory().selectedSlot = 0;
-                    return;
-                }
-            }
+        if (cycle < 2) {
+            // Sneak tap — just 2 ticks, catches the player at the edge
+            setKey(mc.options.sneakKey, true);
+        } else {
+            // Rest of cycle — no sneak, walking freely
+            setKey(mc.options.sneakKey, false);
         }
+
+        tick++;
     }
 
     private static void setKey(KeyBinding key, boolean pressed) {
