@@ -21,37 +21,36 @@ public class FastBridgeController {
         setKey(mc.options.backKey, false);
         mc.options.useKey.setPressed(false);
 
-        // Full cycle = speed * 4 ticks
-        // Phase 1: S+D+Shift (walking to edge safely)
-        // Phase 2: S+D, NO shift for 1 tick (walk over edge slightly)
-        // Phase 3: S+D+Shift+RightClick (place block while sneaking back)
-        // Phase 4: S+D+Shift (recover, hold position)
+        // Cycle breakdown (speed = ticks per phase):
+        // Phase 1 (speed*3 ticks) : S+D+Shift held — smooth stable movement
+        // Phase 2 (3 ticks)       : S+D, NO shift — hang over edge long enough to feel natural
+        // Phase 3 (2 ticks)       : S+D+Shift+Click x2 — rapid double place on the way back
+        // Phase 4 (speed ticks)   : S+D+Shift — recover before next cycle
 
-        int cycle = tick % (speed * 4);
+        int totalCycle = (speed * 3) + 3 + 2 + speed;
+        int cycle = tick % totalCycle;
 
-        if (cycle < speed) {
-            // Phase 1: Move S+D with sneak — safe movement toward edge
+        if (cycle < speed * 3) {
+            // Phase 1: Smooth sneak walk toward edge
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
 
-        } else if (cycle < speed + 1) {
-            // Phase 2: Release shift for exactly 1 tick
-            // Player steps slightly over the edge
+        } else if (cycle < speed * 3 + 3) {
+            // Phase 2: Release shift — stay off edge for 3 ticks (smooth, not shaky)
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
-            setKey(mc.options.sneakKey, false); // <-- shift released!
+            setKey(mc.options.sneakKey, false); // shift OFF — hang over edge
 
-        } else if (cycle < speed * 2 + 1) {
-            // Phase 3: Immediately sneak again + place block
-            // This is the "catch yourself" moment
+        } else if (cycle < speed * 3 + 3 + 2) {
+            // Phase 3: Sneak back ON + place block fast (2 rapid ticks)
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
-            setKey(mc.options.sneakKey, true); // <-- shift back on!
-            mc.options.useKey.setPressed(true); // place block
+            setKey(mc.options.sneakKey, true);  // shift back ON
+            mc.options.useKey.setPressed(true); // place block every tick = fast placement
 
         } else {
-            // Phase 4: Keep sneaking, recover position
+            // Phase 4: Recover with sneak held before repeating
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
