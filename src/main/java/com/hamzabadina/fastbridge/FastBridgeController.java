@@ -10,7 +10,11 @@ import net.minecraft.screen.slot.SlotActionType;
 public class FastBridgeController {
     public static boolean active = false;
     private static int tick = 0;
-    private static int lastSlot = -1;
+
+    // How many ticks each phase lasts
+    private static final int SNEAK_TICKS = 3;   // shift ON + place
+    private static final int MOVE_TICKS  = 3;   // shift OFF + move
+    private static final int TOTAL       = SNEAK_TICKS + MOVE_TICKS;
 
     public static void onTick() {
         if (!active) return;
@@ -18,10 +22,19 @@ public class FastBridgeController {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.interactionManager == null) return;
 
-        // Auto refill hotbar from inventory when current slot runs out
-        autoRefill(mc);
+        // Safety check — if player is falling, force sneak immediately
+        if (mc.player.fallDistance > 0.1f) {
+            setKey(mc.options.sneakKey, true);
+            setKey(mc.options.backKey, true);
+            setKey(mc.options.rightKey, true);
+            mc.options.useKey.setPressed(true);
+            // Reset cycle back to sneak phase so we dont immediately release again
+            tick = 0;
+            return;
+        }
 
-        int speed = FastBridgeConfig.speedTicks;
+        // Auto refill blocks
+        autoRefill(mc);
 
         // Reset every tick
         setKey(mc.options.sneakKey, false);
@@ -29,10 +42,12 @@ public class FastBridgeController {
         setKey(mc.options.backKey, false);
         mc.options.useKey.setPressed(false);
 
-        int cycle = tick % (speed * 2);
+        int cycle = tick % TOTAL;
 
-        if (cycle < speed) {
-            // Phase 1: Shift + fast place
+        if (cycle < SNEAK_TICKS) {
+            // Phase 1: Sneak + Place
+            // Shift is ON the whole phase
+            // Right click alternates for fast placement
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
@@ -43,7 +58,8 @@ public class FastBridgeController {
             }
 
         } else {
-            // Phase 2: Remove shift + move + keep placing
+            // Phase 2: Move — shift OFF
+            // Still placing while moving
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, false);
@@ -62,34 +78,30 @@ public class FastBridgeController {
         int selectedSlot = inv.selectedSlot;
         ItemStack heldStack = inv.getStack(selectedSlot);
 
-        // Check if current hotbar slot is empty or not a block
+        // Current slot still has blocks — no need to refill
         if (!heldStack.isEmpty() && heldStack.getItem() instanceof BlockItem) {
-            lastSlot = selectedSlot;
-            return; // all good, still has blocks
+            return;
         }
 
-        // Try to find blocks in the rest of the hotbar first
+        // Scan rest of hotbar
         for (int i = 0; i < 9; i++) {
             if (i == selectedSlot) continue;
             ItemStack stack = inv.getStack(i);
             if (!stack.isEmpty() && stack.getItem() instanceof BlockItem) {
-                // Switch to that hotbar slot
                 inv.selectedSlot = i;
                 return;
             }
         }
 
-        // Hotbar is empty — search main inventory (slots 9–35)
+        // Scan main inventory
         for (int i = 9; i < 36; i++) {
             ItemStack stack = inv.getStack(i);
             if (!stack.isEmpty() && stack.getItem() instanceof BlockItem) {
-                // Move from inventory to current hotbar slot using screen handler
                 if (mc.player.currentScreenHandler != null) {
-                    // Swap inventory slot with hotbar slot
                     mc.interactionManager.clickSlot(
                         mc.player.currentScreenHandler.syncId,
-                        i,           // inventory slot
-                        selectedSlot, // hotbar slot number = swap hotkey number
+                        i,
+                        selectedSlot,
                         SlotActionType.SWAP,
                         mc.player
                     );
@@ -98,14 +110,11 @@ public class FastBridgeController {
             }
         }
 
-        // Nothing found anywhere — deactivate to avoid placing air
-        // Comment this out if you want it to keep running even with no blocks
+        // No blocks anywhere — stop
         active = false;
-        if (mc.player != null) {
-            mc.player.sendMessage(
-                net.minecraft.text.Text.literal("§c[FastBridge] No blocks left!"), true
-            );
-        }
+        mc.player.sendMessage(
+            net.minecraft.text.Text.literal("§c[FastBridge] No blocks left!"), true
+        );
     }
 
     private static void setKey(KeyBinding key, boolean pressed) {
@@ -115,7 +124,6 @@ public class FastBridgeController {
     public static void toggle() {
         active = !active;
         tick = 0;
-        lastSlot = -1;
         if (!active) {
             MinecraftClient mc = MinecraftClient.getInstance();
             if (mc.options != null) {
