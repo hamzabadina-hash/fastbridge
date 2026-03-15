@@ -15,30 +15,30 @@ public class FastBridgeController {
 
         int speed = FastBridgeConfig.speedTicks;
 
-        // Always reset every tick
+        // Reset every tick
         setKey(mc.options.sneakKey, false);
         setKey(mc.options.rightKey, false);
         setKey(mc.options.backKey, false);
         mc.options.useKey.setPressed(false);
 
-        // Real fast bridge mechanic:
-        // - S + D always held (moving diagonally)
-        // - Right click ALWAYS held (placing constantly)
-        // - Sneak tapped for only 2 ticks per cycle (just enough to not fall)
-        // - Sneak releases for the rest — looks and feels like a real player
+        // Cycle:
+        // Phase 1: SHIFT + PLACE (sneak and right click)
+        // Phase 2: MOVE (no sneak, just walk S+D)
+        // Repeat
 
-        int cycle = tick % (speed * 6);
+        int cycle = tick % (speed * 2);
 
-        // Always moving + always placing
-        setKey(mc.options.backKey, true);
-        setKey(mc.options.rightKey, true);
-        mc.options.useKey.setPressed(true);
-
-        if (cycle < 2) {
-            // Sneak tap — just 2 ticks, catches the player at the edge
+        if (cycle < speed) {
+            // Phase 1: Shift + Place
+            setKey(mc.options.backKey, true);
+            setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
+            mc.options.useKey.setPressed(true);
+
         } else {
-            // Rest of cycle — no sneak, walking freely
+            // Phase 2: Remove shift + move
+            setKey(mc.options.backKey, true);
+            setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, false);
         }
 
