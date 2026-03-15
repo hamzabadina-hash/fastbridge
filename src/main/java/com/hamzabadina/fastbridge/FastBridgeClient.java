@@ -3,6 +3,7 @@ package com.hamzabadina.fastbridge;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
@@ -12,6 +13,10 @@ public class FastBridgeClient implements ClientModInitializer {
 
     public static KeyBinding toggleKey;
     public static KeyBinding menuKey;
+
+    private static boolean lastRightClickState = false;
+    private static int multiClickTicks = 0;
+    private static final int MULTI_CLICK_AMOUNT = 4;
 
     @Override
     public void onInitializeClient() {
@@ -46,7 +51,29 @@ public class FastBridgeClient implements ClientModInitializer {
                 }
             }
 
+            handleClickMultiplier(client);
             FastBridgeController.onTick();
         });
+    }
+
+    private static void handleClickMultiplier(MinecraftClient mc) {
+        if (mc.player == null) return;
+
+        boolean rightClickNow = mc.options.useKey.isPressed();
+
+        if (rightClickNow && !lastRightClickState) {
+            multiClickTicks = MULTI_CLICK_AMOUNT * 2;
+        }
+
+        lastRightClickState = rightClickNow;
+
+        if (multiClickTicks > 0) {
+            if (multiClickTicks % 2 == 0) {
+                mc.options.useKey.setPressed(true);
+            } else {
+                mc.options.useKey.setPressed(false);
+            }
+            multiClickTicks--;
+        }
     }
 }
