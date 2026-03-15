@@ -14,12 +14,9 @@ public class FastBridgeClient implements ClientModInitializer {
     public static KeyBinding toggleKey;
     public static KeyBinding menuKey;
 
-    private static boolean lastRightClickState = false;
+    public static boolean autoClickerEnabled = true;
     private static int autoClickTick = 0;
 
-    // 12 CPS pattern over 20 ticks
-    // 12 clicks in 20 ticks = click on ticks: 0,1,3,4,6,7,9,10,12,13,15,16
-    // pattern: ON ON OFF ON ON OFF ON ON OFF ON ON OFF ON ON OFF ON ON OFF ON OFF
     private static final boolean[] CPS_12_PATTERN = {
         true,  true,  false,
         true,  true,  false,
@@ -63,27 +60,26 @@ public class FastBridgeClient implements ClientModInitializer {
                 }
             }
 
-            handleClickMultiplier(client);
+            handleAutoClicker(client);
             FastBridgeController.onTick();
         });
     }
 
-    private static void handleClickMultiplier(MinecraftClient mc) {
+    private static void handleAutoClicker(MinecraftClient mc) {
         if (mc.player == null) return;
 
-        boolean rightClickNow = mc.options.useKey.isPressed();
+        // Auto clicker runs when:
+        // - fast bridge is ON (always fires right click)
+        // - OR player is manually holding right click with auto clicker enabled
+        boolean shouldRun = FastBridgeController.active
+            || (autoClickerEnabled && mc.options.useKey.isPressed());
 
-        if (rightClickNow) {
-            // Fire 12 CPS pattern continuously while right click held
+        if (shouldRun) {
             boolean shouldClick = CPS_12_PATTERN[autoClickTick % CPS_12_PATTERN.length];
             mc.options.useKey.setPressed(shouldClick);
             autoClickTick++;
         } else {
-            // Reset pattern when not clicking
             autoClickTick = 0;
-            mc.options.useKey.setPressed(false);
         }
-
-        lastRightClickState = rightClickNow;
     }
 }
