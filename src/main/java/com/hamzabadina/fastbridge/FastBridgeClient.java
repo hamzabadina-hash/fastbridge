@@ -15,8 +15,20 @@ public class FastBridgeClient implements ClientModInitializer {
     public static KeyBinding menuKey;
 
     private static boolean lastRightClickState = false;
-    private static int multiClickTicks = 0;
-    private static final int MULTI_CLICK_AMOUNT = 12;
+    private static int autoClickTick = 0;
+
+    // 12 CPS pattern over 20 ticks
+    // 12 clicks in 20 ticks = click on ticks: 0,1,3,4,6,7,9,10,12,13,15,16
+    // pattern: ON ON OFF ON ON OFF ON ON OFF ON ON OFF ON ON OFF ON ON OFF ON OFF
+    private static final boolean[] CPS_12_PATTERN = {
+        true,  true,  false,
+        true,  true,  false,
+        true,  true,  false,
+        true,  true,  false,
+        true,  true,  false,
+        true,  true,  false,
+        true,  false
+    };
 
     @Override
     public void onInitializeClient() {
@@ -61,19 +73,17 @@ public class FastBridgeClient implements ClientModInitializer {
 
         boolean rightClickNow = mc.options.useKey.isPressed();
 
-        if (rightClickNow && !lastRightClickState) {
-            multiClickTicks = MULTI_CLICK_AMOUNT * 2;
+        if (rightClickNow) {
+            // Fire 12 CPS pattern continuously while right click held
+            boolean shouldClick = CPS_12_PATTERN[autoClickTick % CPS_12_PATTERN.length];
+            mc.options.useKey.setPressed(shouldClick);
+            autoClickTick++;
+        } else {
+            // Reset pattern when not clicking
+            autoClickTick = 0;
+            mc.options.useKey.setPressed(false);
         }
 
         lastRightClickState = rightClickNow;
-
-        if (multiClickTicks > 0) {
-            if (multiClickTicks % 2 == 0) {
-                mc.options.useKey.setPressed(true);
-            } else {
-                mc.options.useKey.setPressed(false);
-            }
-            multiClickTicks--;
-        }
     }
 }
