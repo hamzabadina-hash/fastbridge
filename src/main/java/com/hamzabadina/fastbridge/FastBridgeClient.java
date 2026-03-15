@@ -16,7 +16,7 @@ public class FastBridgeClient implements ClientModInitializer {
 
     private static boolean lastRightClickState = false;
     private static int multiClickTicks = 0;
-    private static final int MULTI_CLICK_AMOUNT = 4;
+    private static final int MULTI_CLICK_AMOUNT = 12;
 
     @Override
     public void onInitializeClient() {
