@@ -21,21 +21,40 @@ public class FastBridgeController {
         setKey(mc.options.backKey, false);
         mc.options.useKey.setPressed(false);
 
-        int cycle = tick % (speed * 2);
+        // Full cycle = speed * 4 ticks
+        // Phase 1: S+D+Shift (walking to edge safely)
+        // Phase 2: S+D, NO shift for 1 tick (walk over edge slightly)
+        // Phase 3: S+D+Shift+RightClick (place block while sneaking back)
+        // Phase 4: S+D+Shift (recover, hold position)
+
+        int cycle = tick % (speed * 4);
 
         if (cycle < speed) {
-            // Phase 1: Hold S + D at the same time (moves right slowly)
-            // + Sneak so you dont fall off
+            // Phase 1: Move S+D with sneak — safe movement toward edge
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
 
+        } else if (cycle < speed + 1) {
+            // Phase 2: Release shift for exactly 1 tick
+            // Player steps slightly over the edge
+            setKey(mc.options.backKey, true);
+            setKey(mc.options.rightKey, true);
+            setKey(mc.options.sneakKey, false); // <-- shift released!
+
+        } else if (cycle < speed * 2 + 1) {
+            // Phase 3: Immediately sneak again + place block
+            // This is the "catch yourself" moment
+            setKey(mc.options.backKey, true);
+            setKey(mc.options.rightKey, true);
+            setKey(mc.options.sneakKey, true); // <-- shift back on!
+            mc.options.useKey.setPressed(true); // place block
+
         } else {
-            // Phase 2: Sneak + Right Click (place block)
+            // Phase 4: Keep sneaking, recover position
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
-            mc.options.useKey.setPressed(true);
         }
 
         tick++;
