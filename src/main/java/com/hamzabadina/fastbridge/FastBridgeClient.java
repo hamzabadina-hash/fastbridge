@@ -15,17 +15,8 @@ public class FastBridgeClient implements ClientModInitializer {
     public static KeyBinding menuKey;
 
     public static boolean autoClickerEnabled = true;
+    public static int autoClickerCPS = 12;
     private static int autoClickTick = 0;
-
-    private static final boolean[] CPS_12_PATTERN = {
-        true,  true,  false,
-        true,  true,  false,
-        true,  true,  false,
-        true,  true,  false,
-        true,  true,  false,
-        true,  true,  false,
-        true,  false
-    };
 
     @Override
     public void onInitializeClient() {
@@ -60,26 +51,45 @@ public class FastBridgeClient implements ClientModInitializer {
                 }
             }
 
-            handleAutoClicker(client);
+            // Run fast bridge automation first
             FastBridgeController.onTick();
+
+            // Then handle auto clicker on top
+            handleAutoClicker(client);
         });
     }
 
-    private static void handleAutoClicker(MinecraftClient mc) {
-        if (mc.player == null) return;
-
-        // Auto clicker runs when:
-        // - fast bridge is ON (always fires right click)
-        // - OR player is manually holding right click with auto clicker enabled
-        boolean shouldRun = FastBridgeController.active
-            || (autoClickerEnabled && mc.options.useKey.isPressed());
-
-        if (shouldRun) {
-            boolean shouldClick = CPS_12_PATTERN[autoClickTick % CPS_12_PATTERN.length];
-            mc.options.useKey.setPressed(shouldClick);
-            autoClickTick++;
-        } else {
+    public static void handleAutoClicker(MinecraftClient mc) {
+        if (mc.player == null || mc.world == null) return;
+        if (!autoClickerEnabled) {
             autoClickTick = 0;
+            return;
+        }
+
+        // Auto clicker fires when fast bridge is ON or player holds right click
+        boolean shouldRun = FastBridgeController.active || mc.options.useKey.isPressed();
+        if (!shouldRun) {
+            autoClickTick = 0;
+            return;
+        }
+
+        // Calculate interval in ticks between each click
+        // CPS 1 = every 20 ticks, CPS 20 = every 1 tick
+        int intervalTicks = Math.max(1, 20 / autoClickerCPS);
+
+        autoClickTick++;
+
+        if (autoClickTick >= intervalTicks) {
+            autoClickTick = 0;
+            // Simulate a right click directly through the interaction manager
+            if (mc.interactionManager != null) {
+                mc.options.useKey.setPressed(true);
+                mc.interactionManager.interactItem(
+                    mc.player,
+                    net.minecraft.util.Hand.MAIN_HAND
+                );
+                mc.options.useKey.setPressed(false);
+            }
         }
     }
 }
