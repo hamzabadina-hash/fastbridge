@@ -37,7 +37,7 @@ public class FastBridgeScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackground(context);
+    renderBackground(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(textRenderer,
             Text.literal("Fast Bridge - Speed Settings"),
             this.width / 2, this.height / 2 - 85, 0xFFFFFF);
