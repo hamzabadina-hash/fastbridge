@@ -43,7 +43,7 @@ public class FastBridgeScreen extends Screen {
             this.width / 2, this.height / 2 - 85, 0xFFFFFF);
         context.drawCenteredTextWithShadow(textRenderer,
             Text.literal("Current: " + FastBridgeConfig.speedTicks + " ticks  |  Status: " +
-                (FastBridgeController.active ? "§aON" : "§cOFF")),
+                (FastBridgeController.active ? "ON" : "OFF")),
             this.width / 2, this.height / 2 - 70, 0xAAAAAA);
         super.render(context, mouseX, mouseY, delta);
     }
@@ -53,23 +53,3 @@ public class FastBridgeScreen extends Screen {
         return false;
     }
 }
-```
-
----
-
-## ✅ Final folder structure should look like this:
-```
-fast-bridge-mod/
-├── build.gradle
-├── gradle.properties
-├── settings.gradle
-└── src/main/
-    ├── java/com/hamzabadina/fastbridge/
-    │   ├── FastBridgeMod.java
-    │   ├── FastBridgeClient.java
-    │   ├── FastBridgeController.java
-    │   ├── FastBridgeConfig.java
-    │   └── FastBridgeScreen.java
-    └── resources/
-        ├── fabric.mod.json
-        └── assets/fastbridge/lang/en_us.json
