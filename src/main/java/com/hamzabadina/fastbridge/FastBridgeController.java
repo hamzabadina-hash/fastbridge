@@ -22,24 +22,35 @@ public class FastBridgeController {
         mc.options.useKey.setPressed(false);
 
         // Cycle:
-        // Phase 1: SHIFT + PLACE (sneak and right click)
-        // Phase 2: MOVE (no sneak, just walk S+D)
-        // Repeat
+        // Phase 1: SHIFT + RAPID PLACE (alternates press/release every tick = max cps)
+        // Phase 2: MOVE (no sneak, just walk S+D, still placing fast)
 
         int cycle = tick % (speed * 2);
 
         if (cycle < speed) {
-            // Phase 1: Shift + Place
+            // Phase 1: Shift + fast place
+            // Alternates right click on/off every tick for maximum cps
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
-            mc.options.useKey.setPressed(true);
+            // Even ticks = click, odd ticks = release = rapid fire
+            if (tick % 2 == 0) {
+                mc.options.useKey.setPressed(true);
+            } else {
+                mc.options.useKey.setPressed(false);
+            }
 
         } else {
-            // Phase 2: Remove shift + move
+            // Phase 2: Remove shift + move + keep placing fast
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, false);
+            // Still rapid clicking during movement phase too
+            if (tick % 2 == 0) {
+                mc.options.useKey.setPressed(true);
+            } else {
+                mc.options.useKey.setPressed(false);
+            }
         }
 
         tick++;
