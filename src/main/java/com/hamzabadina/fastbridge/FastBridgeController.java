@@ -15,35 +15,27 @@ public class FastBridgeController {
 
         int speed = FastBridgeConfig.speedTicks;
 
+        // Reset all keys every tick
         setKey(mc.options.sneakKey, false);
         setKey(mc.options.rightKey, false);
-        setKey(mc.options.leftKey, false);
         setKey(mc.options.backKey, false);
         mc.options.useKey.setPressed(false);
 
-        int cycle = tick % (speed * 4);
+        int cycle = tick % (speed * 2);
 
         if (cycle < speed) {
-            // Phase 1: S (walk backward)
+            // Phase 1: Hold S + D at the same time (moves right slowly)
+            // + Sneak so you dont fall off
             setKey(mc.options.backKey, true);
-
-        } else if (cycle < speed * 2) {
-            // Phase 2: Shift + Right Click
-            setKey(mc.options.sneakKey, true);
-            if (cycle == speed) {
-                mc.options.useKey.setPressed(true);
-            }
-
-        } else if (cycle < speed * 3) {
-            // Phase 3: D (strafe right)
             setKey(mc.options.rightKey, true);
+            setKey(mc.options.sneakKey, true);
 
         } else {
-            // Phase 4: Shift + Right Click
+            // Phase 2: Sneak + Right Click (place block)
+            setKey(mc.options.backKey, true);
+            setKey(mc.options.rightKey, true);
             setKey(mc.options.sneakKey, true);
-            if (cycle == speed * 3) {
-                mc.options.useKey.setPressed(true);
-            }
+            mc.options.useKey.setPressed(true);
         }
 
         tick++;
@@ -61,7 +53,6 @@ public class FastBridgeController {
             if (mc.options != null) {
                 setKey(mc.options.sneakKey, false);
                 setKey(mc.options.rightKey, false);
-                setKey(mc.options.leftKey, false);
                 setKey(mc.options.backKey, false);
                 mc.options.useKey.setPressed(false);
             }
