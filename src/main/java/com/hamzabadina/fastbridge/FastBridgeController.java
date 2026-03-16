@@ -11,9 +11,14 @@ public class FastBridgeController {
     public static boolean active = false;
     private static int tick = 0;
 
-    private static final int SNEAK_TICKS = 4;
-    private static final int MOVE_TICKS  = 2;
-    private static final int TOTAL       = SNEAK_TICKS + MOVE_TICKS;
+    // Cycle:
+    // MOVE  phase: no sneak, walk fast S+D        (short)
+    // SNEAK phase: sneak just before falling edge  (short quick tap)
+    // repeat
+
+    private static final int MOVE_TICKS  = 4; // walk freely toward edge
+    private static final int SNEAK_TICKS = 2; // quick sneak tap right before falling
+    private static final int TOTAL       = MOVE_TICKS + SNEAK_TICKS;
 
     public static void onTick() {
         if (!active) return;
@@ -21,7 +26,7 @@ public class FastBridgeController {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.interactionManager == null) return;
 
-        // SAFETY: if falling at all, immediately sneak and reset
+        // Emergency fall catch — if falling snap sneak on immediately
         if (mc.player.fallDistance > 0.05f) {
             setKey(mc.options.sneakKey, true);
             setKey(mc.options.backKey, true);
@@ -30,26 +35,28 @@ public class FastBridgeController {
             return;
         }
 
-        // Auto refill blocks
         autoRefill(mc);
 
-        // Always reset every tick - nothing carries over
+        // Reset all keys every tick
         setKey(mc.options.sneakKey, false);
         setKey(mc.options.backKey, false);
         setKey(mc.options.rightKey, false);
 
         int cycle = tick % TOTAL;
 
-        if (cycle < SNEAK_TICKS) {
-            // SNEAK phase: hold shift the whole time, move S+D
-            setKey(mc.options.sneakKey, true);
+        if (cycle < MOVE_TICKS) {
+            // MOVE phase: walk fast, no sneak
+            // Player moves toward edge freely
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
-        } else {
-            // MOVE phase: release shift, keep moving
             setKey(mc.options.sneakKey, false);
+
+        } else {
+            // SNEAK phase: quick tap sneak right before edge
+            // Just 2 ticks — barely noticeable but catches player
             setKey(mc.options.backKey, true);
             setKey(mc.options.rightKey, true);
+            setKey(mc.options.sneakKey, true);
         }
 
         tick++;
@@ -112,3 +119,12 @@ public class FastBridgeController {
         }
     }
 }
+```
+
+---
+
+## Exactly what it does:
+```
+Tick 1-4:  Walk freely — S+D, NO sneak  → fast movement toward edge
+Tick 5-6:  Quick sneak tap — S+D+Shift  → catches player right before falling
+Repeat...
