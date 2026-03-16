@@ -63,7 +63,6 @@ public class FastBridgeClient implements ClientModInitializer {
     public static void handleAutoClicker(MinecraftClient mc) {
         if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
 
-        // Run when fast bridge is ON or autoclicker is enabled and right click held
         boolean shouldRun = FastBridgeController.active
             || (autoClickerEnabled && mc.options.useKey.isPressed());
 
@@ -85,19 +84,24 @@ public class FastBridgeClient implements ClientModInitializer {
         if (mc.player == null || mc.interactionManager == null || mc.world == null) return;
 
         ClientPlayerInteractionManager im = mc.interactionManager;
-
-        // Check what player is looking at
         HitResult hit = mc.crosshairTarget;
         if (hit == null) return;
 
         if (hit.getType() == HitResult.Type.BLOCK) {
-            // Looking at a block — place block on it
             BlockHitResult blockHit = (BlockHitResult) hit;
-            im.interactBlock(mc.player, Hand.MAIN_HAND, blockHit);
+            var result = im.interactBlock(mc.player, Hand.MAIN_HAND, blockHit);
+
+            // Trigger hand swing animation on successful place
+            if (result.isAccepted()) {
+                mc.player.swingHand(Hand.MAIN_HAND);
+            }
+
             im.interactItem(mc.player, Hand.MAIN_HAND);
-        } else if (hit.getType() == HitResult.Type.MISS) {
-            // Looking at air — still try to use item
-            im.interactItem(mc.player, Hand.MAIN_HAND);
+        } else {
+            var result = im.interactItem(mc.player, Hand.MAIN_HAND);
+            if (result.isAccepted()) {
+                mc.player.swingHand(Hand.MAIN_HAND);
+            }
         }
     }
 }
