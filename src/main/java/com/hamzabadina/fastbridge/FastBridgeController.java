@@ -119,12 +119,3 @@ public class FastBridgeController {
         }
     }
 }
-```
-
----
-
-## Exactly what it does:
-```
-Tick 1-4:  Walk freely — S+D, NO sneak  → fast movement toward edge
-Tick 5-6:  Quick sneak tap — S+D+Shift  → catches player right before falling
-Repeat...
