@@ -8,7 +8,6 @@ import net.minecraft.text.Text;
 public class FastBridgeScreen extends Screen {
 
     private ButtonWidget cpsLabel;
-    private ButtonWidget autoClickerBtn;
 
     public FastBridgeScreen() {
         super(Text.literal("Fast Bridge Settings"));
@@ -17,7 +16,7 @@ public class FastBridgeScreen extends Screen {
     @Override
     protected void init() {
         int cx = this.width / 2;
-        int sy = this.height / 2 - 100;
+        int sy = this.height / 2 - 110;
 
         // Fast Bridge ON/OFF
         addDrawableChild(ButtonWidget.builder(
@@ -30,39 +29,38 @@ public class FastBridgeScreen extends Screen {
         ).dimensions(cx - 80, sy, 160, 24).build());
 
         // Auto Clicker ON/OFF
-        autoClickerBtn = ButtonWidget.builder(
+        addDrawableChild(ButtonWidget.builder(
             Text.literal("Auto Clicker: " + (FastBridgeClient.autoClickerEnabled ? "§aON" : "§cOFF")),
             btn -> {
                 FastBridgeClient.autoClickerEnabled = !FastBridgeClient.autoClickerEnabled;
                 btn.setMessage(Text.literal("Auto Clicker: " +
                     (FastBridgeClient.autoClickerEnabled ? "§aON" : "§cOFF")));
             }
-        ).dimensions(cx - 80, sy + 32, 160, 24).build();
-        addDrawableChild(autoClickerBtn);
-
-        // CPS label in middle
-        cpsLabel = ButtonWidget.builder(
-            Text.literal("CPS: " + FastBridgeClient.autoClickerCPS),
-            btn -> {}
-        ).dimensions(cx - 20, sy + 64, 40, 24).build();
-        cpsLabel.active = false;
-        addDrawableChild(cpsLabel);
+        ).dimensions(cx - 80, sy + 32, 160, 24).build());
 
         // CPS minus
-        addDrawableChild(ButtonWidget.builder(Text.literal("  -  "), btn -> {
+        addDrawableChild(ButtonWidget.builder(Text.literal("-"), btn -> {
             if (FastBridgeClient.autoClickerCPS > 1) {
                 FastBridgeClient.autoClickerCPS--;
                 cpsLabel.setMessage(Text.literal("CPS: " + FastBridgeClient.autoClickerCPS));
             }
-        }).dimensions(cx - 80, sy + 64, 55, 24).build());
+        }).dimensions(cx - 80, sy + 64, 40, 24).build());
+
+        // CPS label (disabled, just display)
+        cpsLabel = ButtonWidget.builder(
+            Text.literal("CPS: " + FastBridgeClient.autoClickerCPS),
+            btn -> {}
+        ).dimensions(cx - 35, sy + 64, 70, 24).build();
+        cpsLabel.active = false;
+        addDrawableChild(cpsLabel);
 
         // CPS plus
-        addDrawableChild(ButtonWidget.builder(Text.literal("  +  "), btn -> {
+        addDrawableChild(ButtonWidget.builder(Text.literal("+"), btn -> {
             if (FastBridgeClient.autoClickerCPS < 20) {
                 FastBridgeClient.autoClickerCPS++;
                 cpsLabel.setMessage(Text.literal("CPS: " + FastBridgeClient.autoClickerCPS));
             }
-        }).dimensions(cx + 25, sy + 64, 55, 24).build());
+        }).dimensions(cx + 40, sy + 64, 40, 24).build());
 
         // Bridge speed
         addDrawableChild(ButtonWidget.builder(Text.literal("Speed: Fast (2)"), btn -> {
@@ -89,19 +87,26 @@ public class FastBridgeScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         renderBackground(context, mouseX, mouseY, delta);
 
+        // Title
         context.drawCenteredTextWithShadow(textRenderer,
-            Text.literal("§6§lFast Bridge §r§7Settings"),
-            this.width / 2, this.height / 2 - 118, 0xFFFFFF);
+            Text.literal("§6§lFast Bridge"),
+            this.width / 2, this.height / 2 - 128, 0xFFFFFF);
 
+        // Status bar
         context.drawCenteredTextWithShadow(textRenderer,
             Text.literal("§7Status: " + (FastBridgeController.active ? "§aBridging" : "§cIdle") +
                 "   §7Clicker: " + (FastBridgeClient.autoClickerEnabled ? "§aON" : "§cOFF") +
                 "   §7CPS: §f" + FastBridgeClient.autoClickerCPS),
-            this.width / 2, this.height / 2 + 65, 0xAAAAAA);
+            this.width / 2, this.height / 2 + 55, 0xAAAAAA);
 
         context.drawCenteredTextWithShadow(textRenderer,
             Text.literal("§7Bridge Speed: §f" + FastBridgeConfig.speedTicks + " ticks"),
-            this.width / 2, this.height / 2 + 78, 0xAAAAAA);
+            this.width / 2, this.height / 2 + 68, 0xAAAAAA);
+
+        // Credits
+        context.drawCenteredTextWithShadow(textRenderer,
+            Text.literal("§8Made by §7SG_Mafia_"),
+            this.width / 2, this.height / 2 + 90, 0x555555);
 
         super.render(context, mouseX, mouseY, delta);
     }
